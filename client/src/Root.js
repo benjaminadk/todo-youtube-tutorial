@@ -9,15 +9,19 @@ import Button from '@material-ui/core/Button'
 import Card from '@material-ui/core/Card'
 import CardHeader from '@material-ui/core/CardHeader'
 import CardContent from '@material-ui/core/CardContent'
-import CardActions from '@material-ui/core/CardActions'
 import TextField from '@material-ui/core/TextField'
 import Dialog from '@material-ui/core/Dialog'
 import DialogActions from '@material-ui/core/DialogActions'
 import DialogContent from '@material-ui/core/DialogContent'
 import DialogTitle from '@material-ui/core/DialogTitle'
+import Typography from '@material-ui/core/Typography'
+import Menu from '@material-ui/core/Menu'
+import MenuItem from '@material-ui/core/MenuItem'
 import IconButton from '@material-ui/core/IconButton'
 import AddIcon from '@material-ui/icons/Add'
 import DeleteIcon from '@material-ui/icons/Delete'
+import PlayIcon from '@material-ui/icons/PlayArrow'
+import MoreIcon from '@material-ui/icons/MoreVert'
 import gql from 'graphql-tag'
 import { Query } from 'react-apollo'
 import { Mutation } from 'react-apollo'
@@ -71,6 +75,12 @@ const styles = theme => ({
     alignItems: 'center',
     justifyContent: 'space-around'
   },
+  cardHeader: {
+    display: 'flex',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    width: '75%'
+  },
   list: {
     height: '50vh',
     width: '40vw',
@@ -96,8 +106,34 @@ const styles = theme => ({
 class Root extends Component {
   state = {
     open: false,
-    text: ''
+    text: '',
+    anchorEl: null,
+    voice: null
   }
+
+  async componentDidMount() {
+    this.speaker = new SpeechSynthesisUtterance()
+    this.speaker.lang = 'en-US'
+  }
+
+  handleSpeech = todos => {
+    var phrase = '       Your To Do List.         '
+    todos.forEach(t => {
+      phrase = phrase.concat(t.text, ',          ')
+    })
+    phrase = phrase.concat('.   Add that is all folks.   Thank You.  ')
+    this.speaker.text = phrase
+    if (this.state.voice) {
+      this.speaker.voice = this.state.voice
+    }
+    speechSynthesis.speak(this.speaker)
+  }
+
+  handleMenu = e => this.setState({ anchorEl: e.currentTarget })
+
+  handleMenuClose = () => this.setState({ anchorEl: null })
+
+  handleVoice = voice => this.setState({ voice, anchorEl: null })
 
   onClose = () => this.setState({ open: false, text: '' })
 
@@ -115,8 +151,22 @@ class Root extends Component {
             if (error) return `Error! ${error.message}`
 
             return (
-              <Card className={classes.card}>
-                <CardHeader title="Todo List" />
+              <Card className={classes.card} raised>
+                <CardHeader
+                  className={classes.cardHeader}
+                  title={<Typography variant="display3">Todo List</Typography>}
+                  action={[
+                    <IconButton
+                      key="speech"
+                      onClick={() => this.handleSpeech(data.getAllTodos)}
+                    >
+                      <PlayIcon />
+                    </IconButton>,
+                    <IconButton key="options" onClick={this.handleMenu}>
+                      <MoreIcon />
+                    </IconButton>
+                  ]}
+                />
                 <CardContent>
                   <List className={classes.list}>
                     {data.getAllTodos.map((todo, i) => (
@@ -166,7 +216,6 @@ class Root extends Component {
                     ))}
                   </List>
                 </CardContent>
-                <CardActions />
               </Card>
             )
           }}
@@ -229,7 +278,19 @@ class Root extends Component {
             </DialogActions>
           </Dialog>
         )}
-      </Mutation>
+      </Mutation>,
+      <Menu
+        key="menu"
+        open={Boolean(this.state.anchorEl)}
+        onClose={this.handleMenuClose}
+        anchorEl={this.state.anchorEl}
+      >
+        {speechSynthesis.getVoices().map((v, i) => (
+          <MenuItem key={i} onClick={() => this.handleVoice(v)}>
+            {v.name}
+          </MenuItem>
+        ))}
+      </Menu>
     ]
   }
 }
