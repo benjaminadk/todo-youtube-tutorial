@@ -1,8 +1,12 @@
 {
-  "name": "todo-tutorial",
+  "name": "todo-tutorial-youtube",
   "version": "1.0.0",
-  "description": "",
+  "description": "a todo app made with react, graphql, express and mongodb",
   "main": "index.js",
+  "engines": {
+    "node": "10.2.1",
+    "npm": "6.1.0"
+  },
   "dependencies": {
     "apollo-server-express": "^1.3.6",
     "body-parser": "^1.18.3",
@@ -19,9 +23,11 @@
   "scripts": {
     "server": "nodemon index.js",
     "client": "npm run start --prefix client",
-    "start": "concurrently \"npm run server\" \"npm run client\""
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "start": "node index.js",
+    "heroku-postbuild": "cd client && npm install --only=dev && npm install && npm run build"
   },
   "keywords": [],
-  "author": "",
+  "author": "benjaminadk",
   "license": "ISC"
 }
