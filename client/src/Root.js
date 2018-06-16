@@ -22,6 +22,7 @@ import AddIcon from '@material-ui/icons/Add'
 import DeleteIcon from '@material-ui/icons/Delete'
 import PlayIcon from '@material-ui/icons/PlayArrow'
 import MoreIcon from '@material-ui/icons/MoreVert'
+import RecordIcon from '@material-ui/icons/RecordVoiceOver'
 import gql from 'graphql-tag'
 import { Query } from 'react-apollo'
 import { Mutation } from 'react-apollo'
@@ -100,20 +101,47 @@ const styles = theme => ({
   },
   dialogContent: {
     width: '35vw'
+  },
+  record: {
+    backgroundColor: '#ff3232',
+    color: 'white'
   }
 })
 
 class Root extends Component {
-  state = {
-    open: false,
-    text: '',
-    anchorEl: null,
-    voice: null
+  constructor(props) {
+    super(props)
+    this.state = {
+      open: false,
+      text: '',
+      anchorEl: null,
+      voice: null,
+      transcript: ''
+    }
+    this.recognition = new window.webkitSpeechRecognition()
+    this.recognition.interimResults = true
+    this.recognition.addEventListener('result', e => this.processSpeechInput(e))
   }
 
-  async componentDidMount() {
+  componentDidMount() {
     this.speaker = new SpeechSynthesisUtterance()
     this.speaker.lang = 'en-US'
+  }
+
+  processSpeechInput = e => {
+    console.log(e.results)
+    const transcript = Array.from(e.results)
+      .map(result => result[0])
+      .map(result => result.transcript)
+      .join('')
+    const withUpperCase = transcript[0].toUpperCase() + transcript.slice(1)
+    const withUpperCaseAndCow = withUpperCase.replace(
+      /cows|cow|beef|bovine/gi,
+      '🐮'
+    )
+    if (e.results[0].isFinal) {
+      this.setState({ text: withUpperCaseAndCow })
+    }
   }
 
   handleSpeech = todos => {
@@ -126,6 +154,7 @@ class Root extends Component {
     if (this.state.voice) {
       this.speaker.voice = this.state.voice
     }
+    console.log('handle speech')
     speechSynthesis.speak(this.speaker)
   }
 
@@ -261,6 +290,7 @@ class Root extends Component {
               <Button
                 variant="raised"
                 color="primary"
+                size="large"
                 disabled={!this.state.text}
                 onClick={() => {
                   createTodo({
@@ -271,8 +301,15 @@ class Root extends Component {
               >
                 Save
               </Button>
-
-              <Button variant="raised" onClick={this.onClose}>
+              <Button
+                variant="raised"
+                size="large"
+                onClick={() => this.recognition.start()}
+                className={classes.record}
+              >
+                <RecordIcon />
+              </Button>
+              <Button variant="raised" size="large" onClick={this.onClose}>
                 Cancel
               </Button>
             </DialogActions>
